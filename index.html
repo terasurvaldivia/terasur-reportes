@@ -10,3 +10,1434 @@
   <title>Tera Sur – Reportes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --green-light: #a8d832;
+      --green-dark: #6ab04c;
+      --teal: #00b4d8;
+      --teal-dark: #0077a8;
+      --navy: #1a2744;
+      --navy-light: #243358;
+      --navy-lighter: #2e4070;
+      --white: #ffffff;
+      --gray-100: #f0f4f8;
+      --gray-200: #dde4ef;
+      --gray-400: #8898b0;
+      --gray-600: #4a5a7a;
+      --danger: #e84545;
+      --success: #27ae60;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.18);
+      --shadow-sm: 0 2px 10px rgba(0,0,0,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow-x: hidden;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ── BACKGROUND ── */
+    .bg-mesh {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 10% 20%, rgba(168,216,50,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 80%, rgba(0,180,216,0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(26,39,68,1) 0%, rgba(15,22,40,1) 100%);
+    }
+
+    /* ═══════════════════════════════════════
+       SCREEN 1 — SETUP (first time)
+    ═══════════════════════════════════════ */
+    #screen-setup {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      gap: 0;
+    }
+    .setup-card {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%; max-width: 420px;
+      backdrop-filter: blur(12px);
+    }
+    .logo-wrap { text-align: center; margin-bottom: 32px; }
+    .logo-wrap img { height: 72px; filter: drop-shadow(0 4px 16px rgba(168,216,50,0.3)); }
+    .setup-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 22px; font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--green-light), var(--teal));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .setup-sub { text-align: center; color: var(--gray-400); font-size: 14px; margin-bottom: 32px; }
+
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--gray-400); text-transform: uppercase; margin-bottom: 8px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 14px 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: var(--white); font-family: 'Inter', sans-serif; font-size: 15px;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+      -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--teal);
+      background: rgba(0,180,216,0.08);
+    }
+    .field select option { background: var(--navy); color: var(--white); }
+
+    .pin-row { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; }
+    .pin-dot {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.14);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: var(--white);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .pin-dot.filled { border-color: var(--teal); background: rgba(0,180,216,0.15); }
+    .pin-dot.error { border-color: var(--danger) !important; background: rgba(232,69,69,0.12) !important; animation: shake 0.4s ease; }
+
+    @keyframes shake {
+      0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 60%{transform:translateX(8px)}
+    }
+
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+    .num-btn {
+      padding: 16px; border: none; border-radius: 12px;
+      background: rgba(255,255,255,0.07);
+      color: var(--white); font-family: 'Exo 2', sans-serif;
+      font-size: 20px; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-user-select: none;
+    }
+    .num-btn:active { background: rgba(0,180,216,0.25); transform: scale(0.94); }
+    .num-btn.del { font-size: 16px; }
+
+    .btn-primary {
+      width: 100%; padding: 16px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, var(--green-light), var(--teal));
+      color: var(--navy); font-family: 'Exo 2', sans-serif;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.04em; margin-top: 8px;
+    }
+    .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hint { font-size: 12px; color: var(--gray-400); text-align: center; margin-top: 12px; line-height: 1.5; }
+    .hint a { color: var(--teal); text-decoration: none; }
+
+    /* ═══════════════════════════════════════
+       SCREEN 2 — LOGIN (PIN)
+    ═══════════════════════════════════════ */
+    #screen-login {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    .login-card {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%; max-width: 380px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+    .login-card .logo-wrap { margin-bottom: 24px; }
+    .login-card img { height: 64px; }
+    .login-title {
+      font-family: 'Exo 2', sans-serif; font-size: 20px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .login-sub { color: var(--gray-400); font-size: 14px; margin-bottom: 28px; }
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.25);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 13px; font-weight: 600; color: var(--teal);
+      margin-bottom: 24px;
+    }
+    .attempts-msg { color: var(--danger); font-size: 13px; min-height: 20px; margin-top: 8px; }
+
+    /* ═══════════════════════════════════════
+       SCREEN 3 — DASHBOARD
+    ═══════════════════════════════════════ */
+    #screen-dashboard { background: var(--gray-100); color: var(--navy); }
+
+    .topbar {
+      background: var(--navy);
+      padding: 16px 20px 16px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar img { height: 36px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-user {
+      font-size: 13px; font-weight: 600; color: var(--teal);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-icon {
+      width: 38px; height: 38px; border: none; border-radius: 10px;
+      background: rgba(255,255,255,0.08); color: var(--white);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; transition: background 0.15s;
+    }
+    .btn-icon:active { background: rgba(255,255,255,0.18); }
+
+    .dash-body { flex: 1; padding: 24px 20px; overflow-y: auto; }
+
+    .dash-greeting {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 24px; font-weight: 800; color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .dash-date { color: var(--gray-400); font-size: 14px; margin-bottom: 28px; }
+
+    .action-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+    .action-card {
+      background: var(--white); border-radius: var(--radius);
+      padding: 22px 18px; cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid transparent;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      -webkit-user-select: none;
+    }
+    .action-card:active { transform: scale(0.97); box-shadow: none; }
+    .action-card.primary { border-color: var(--teal); }
+    .action-card .card-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 12px;
+    }
+    .action-card.primary .card-icon { background: linear-gradient(135deg, #e8f9fd, #c5f0fa); }
+    .action-card.secondary .card-icon { background: linear-gradient(135deg, #f5ffe0, #e0f5b0); }
+    .action-card .card-title {
+      font-family: 'Exo 2', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 4px;
+    }
+    .action-card .card-desc { font-size: 12px; color: var(--gray-400); line-height: 1.4; }
+
+    .section-title {
+      font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700;
+      color: var(--navy); margin-bottom: 14px;
+    }
+    .reports-list { display: flex; flex-direction: column; gap: 10px; }
+    .report-item {
+      background: var(--white); border-radius: 12px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .report-item:active { transform: scale(0.98); }
+    .report-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--green-light), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .report-info { flex: 1; min-width: 0; }
+    .report-name { font-weight: 600; font-size: 14px; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .report-meta { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .report-chevron { color: var(--gray-400); font-size: 16px; }
+    .empty-state { text-align: center; color: var(--gray-400); padding: 32px 20px; font-size: 14px; }
+
+    /* ═══════════════════════════════════════
+       SCREEN 4 — FORM
+    ═══════════════════════════════════════ */
+    #screen-form { background: var(--gray-100); color: var(--navy); }
+
+    .form-topbar {
+      background: var(--navy);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .btn-back {
+      width: 36px; height: 36px; border: none; border-radius: 10px;
+      background: rgba(255,255,255,0.10); color: var(--white);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .form-topbar-title {
+      font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; color: var(--white); flex: 1;
+    }
+
+    .form-body { flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 100px; }
+
+    .form-section {
+      background: var(--white); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .form-section-title {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--navy-lighter); text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--gray-100);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title span { font-size: 18px; }
+
+    .form-field { margin-bottom: 16px; }
+    .form-field:last-child { margin-bottom: 0; }
+    .form-field label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 7px;
+    }
+    .form-field input, .form-field select, .form-field textarea {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px; color: var(--navy);
+      font-family: 'Inter', sans-serif; font-size: 15px;
+      background: var(--white); outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+      border-color: var(--teal);
+    }
+    .form-field textarea { resize: vertical; min-height: 80px; }
+
+    .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+    .check-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--gray-100); border-radius: 10px; padding: 12px 14px;
+      cursor: pointer; transition: background 0.15s;
+      -webkit-user-select: none;
+    }
+    .check-item:active { background: #e0eefa; }
+    .check-item input[type=checkbox] { display: none; }
+    .check-box {
+      width: 22px; height: 22px; border-radius: 6px;
+      border: 2px solid var(--gray-200); background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: border-color 0.2s, background 0.2s;
+      font-size: 13px; color: var(--white);
+    }
+    .check-item.checked .check-box {
+      border-color: var(--teal); background: var(--teal);
+    }
+    .check-label { font-size: 14px; color: var(--navy); line-height: 1.4; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Signature pad */
+    .sig-wrap {
+      border: 2px dashed var(--gray-200); border-radius: 10px;
+      overflow: hidden; background: #fafbfc;
+    }
+    .sig-wrap canvas { display: block; width: 100%; touch-action: none; }
+    .sig-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-sm {
+      padding: 8px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px;
+      background: var(--white); font-size: 13px; font-weight: 600;
+      color: var(--gray-600); cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-sm:active { border-color: var(--teal); color: var(--teal); }
+
+    .form-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--white); padding: 16px 20px;
+      border-top: 1px solid var(--gray-200);
+      display: flex; gap: 12px; z-index: 200;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+    }
+    .btn-save {
+      flex: 1; padding: 15px; border: none; border-radius: 12px;
+      background: linear-gradient(135deg, var(--green-light), var(--teal));
+      color: var(--navy); font-family: 'Exo 2', sans-serif;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-save:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* ═══════════════════════════════════════
+       SCREEN 5 — SUCCESS
+    ═══════════════════════════════════════ */
+    #screen-success {
+      align-items: center; justify-content: center;
+      padding: 40px 24px; background: var(--gray-100);
+    }
+    .success-card {
+      background: var(--white); border-radius: 24px;
+      padding: 48px 32px; text-align: center;
+      width: 100%; max-width: 380px;
+      box-shadow: var(--shadow);
+    }
+    .success-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--green-light), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 24px;
+    }
+    .success-title {
+      font-family: 'Exo 2', sans-serif; font-size: 24px; font-weight: 800;
+      color: var(--navy); margin-bottom: 8px;
+    }
+    .success-msg { color: var(--gray-400); font-size: 15px; margin-bottom: 32px; line-height: 1.6; }
+    .success-actions { display: flex; flex-direction: column; gap: 12px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--navy); color: var(--white);
+      padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 500;
+      box-shadow: var(--shadow); z-index: 9999;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 1000;
+      align-items: flex-end; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 24px 24px 0 0;
+      padding: 32px 24px; width: 100%; max-width: 480px;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-title {
+      font-family: 'Exo 2', sans-serif; font-size: 18px; font-weight: 700;
+      color: var(--navy); margin-bottom: 8px;
+    }
+    .modal-msg { color: var(--gray-400); font-size: 14px; margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 12px; }
+    .btn-outline {
+      flex: 1; padding: 14px; border: 1.5px solid var(--gray-200); border-radius: 12px;
+      background: none; color: var(--navy); font-family: 'Exo 2', sans-serif;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Loader */
+    .loader-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(26,39,68,0.75); z-index: 2000;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+      backdrop-filter: blur(4px);
+    }
+    .loader-overlay.open { display: flex; }
+    .spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: var(--teal);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { color: var(--white); font-size: 14px; font-weight: 500; }
+
+    /* Responsive */
+    @media (min-width: 600px) {
+      .action-cards { grid-template-columns: repeat(3, 1fr); }
+      .form-body { max-width: 600px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<!-- ═══ SCREEN 1: SETUP ═══ -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-card">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="Tera Sur" id="logo-setup">
+    </div>
+    <div class="setup-title">Configuración Inicial</div>
+    <div class="setup-sub">Configura tu cuenta una sola vez</div>
+
+    <div class="field">
+      <label>Nombre completo</label>
+      <input type="text" id="setup-name" placeholder="Ej: Juan Pérez" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Cargo / Rol</label>
+      <input type="text" id="setup-role" placeholder="Ej: Técnico Eléctrico">
+    </div>
+    <div class="field">
+      <label>Empresa (cliente)</label>
+      <input type="text" id="setup-company" placeholder="Ej: Empresa ABC">
+    </div>
+
+    <div class="field">
+      <label>Crea tu PIN de acceso (4 dígitos)</label>
+      <div class="pin-row" id="setup-pin-display">
+        <div class="pin-dot" id="sd0"></div>
+        <div class="pin-dot" id="sd1"></div>
+        <div class="pin-dot" id="sd2"></div>
+        <div class="pin-dot" id="sd3"></div>
+      </div>
+      <div class="numpad" id="setup-numpad">
+        <button class="num-btn" data-n="1">1</button>
+        <button class="num-btn" data-n="2">2</button>
+        <button class="num-btn" data-n="3">3</button>
+        <button class="num-btn" data-n="4">4</button>
+        <button class="num-btn" data-n="5">5</button>
+        <button class="num-btn" data-n="6">6</button>
+        <button class="num-btn" data-n="7">7</button>
+        <button class="num-btn" data-n="8">8</button>
+        <button class="num-btn" data-n="9">9</button>
+        <button class="num-btn del" data-n="del">⌫</button>
+        <button class="num-btn" data-n="0">0</button>
+        <button class="num-btn" data-n="ok">✓</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-setup-save" disabled>Guardar y Continuar →</button>
+    <p class="hint">Esta información se almacena solo en este dispositivo.</p>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2: LOGIN ═══ -->
+<div class="screen" id="screen-login">
+  <div class="login-card">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="Tera Sur" id="logo-login">
+    </div>
+    <div class="login-title">Bienvenido</div>
+    <div class="login-sub">Ingresa tu PIN para continuar</div>
+    <div class="user-badge">👷 <span id="login-username">Técnico</span></div>
+
+    <div class="pin-row" id="login-pin-display">
+      <div class="pin-dot" id="ld0"></div>
+      <div class="pin-dot" id="ld1"></div>
+      <div class="pin-dot" id="ld2"></div>
+      <div class="pin-dot" id="ld3"></div>
+    </div>
+    <div class="attempts-msg" id="attempts-msg"></div>
+
+    <div class="numpad" id="login-numpad">
+      <button class="num-btn" data-n="1">1</button>
+      <button class="num-btn" data-n="2">2</button>
+      <button class="num-btn" data-n="3">3</button>
+      <button class="num-btn" data-n="4">4</button>
+      <button class="num-btn" data-n="5">5</button>
+      <button class="num-btn" data-n="6">6</button>
+      <button class="num-btn" data-n="7">7</button>
+      <button class="num-btn" data-n="8">8</button>
+      <button class="num-btn" data-n="9">9</button>
+      <button class="num-btn del" data-n="del">⌫</button>
+      <button class="num-btn" data-n="0">0</button>
+      <button class="num-btn del" data-n="clr">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: DASHBOARD ═══ -->
+<div class="screen" id="screen-dashboard">
+  <div class="topbar">
+    <img src="logo.png" alt="Tera Sur" id="logo-dash">
+    <div class="topbar-right">
+      <div class="topbar-user">👷 <span id="dash-username"></span></div>
+      <button class="btn-icon" id="btn-logout" title="Cerrar sesión">🔒</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="dash-greeting">¡Hola, <span id="dash-firstname"></span>! 👋</div>
+    <div class="dash-date" id="dash-date"></div>
+
+    <div class="action-cards">
+      <div class="action-card primary" id="btn-new-report">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Nuevo Reporte</div>
+        <div class="card-desc">Mantención eléctrica</div>
+      </div>
+      <div class="action-card secondary" id="btn-new-novedad">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Novedad</div>
+        <div class="card-desc">Reporte de novedad</div>
+      </div>
+    </div>
+
+    <div class="section-title">Reportes recientes</div>
+    <div class="reports-list" id="reports-list">
+      <div class="empty-state">No hay reportes aún.<br>¡Crea el primero! ⚡</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 4: FORM ═══ -->
+<div class="screen" id="screen-form">
+  <div class="form-topbar">
+    <button class="btn-back" id="btn-back">←</button>
+    <div class="form-topbar-title" id="form-screen-title">Nuevo Reporte</div>
+  </div>
+
+  <div class="form-body">
+    <!-- DATOS DEL CLIENTE -->
+    <div class="form-section">
+      <div class="form-section-title"><span>🏢</span> Datos del Cliente</div>
+      <div class="form-field">
+        <label>Empresa</label>
+        <input type="text" id="f-empresa" placeholder="Nombre de la empresa">
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Teléfono</label>
+          <input type="tel" id="f-telefono" placeholder="+56 9...">
+        </div>
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="correo@empresa.cl">
+        </div>
+      </div>
+    </div>
+
+    <!-- DATOS DEL SERVICIO -->
+    <div class="form-section">
+      <div class="form-section-title"><span>📍</span> Datos del Servicio</div>
+      <div class="form-field">
+        <label>Unidad / Sala</label>
+        <input type="text" id="f-unidad" placeholder="Ej: Sala de servidores B">
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Fecha del servicio</label>
+          <input type="date" id="f-fecha">
+        </div>
+        <div class="form-field">
+          <label>Hora</label>
+          <input type="time" id="f-hora">
+        </div>
+      </div>
+    </div>
+
+    <!-- TRABAJOS REALIZADOS -->
+    <div class="form-section" id="section-trabajos">
+      <div class="form-section-title"><span>🔧</span> Trabajo Realizado</div>
+      <div class="checkbox-group" id="checkbox-group">
+        <label class="check-item" data-key="tableros">
+          <input type="checkbox" value="tableros">
+          <div class="check-box">✓</div>
+          <span class="check-label">Revisión de tableros eléctricos</span>
+        </label>
+        <label class="check-item" data-key="enchufes">
+          <input type="checkbox" value="enchufes">
+          <div class="check-box">✓</div>
+          <span class="check-label">Reemplazo de enchufes o interruptores</span>
+        </label>
+        <label class="check-item" data-key="tierra">
+          <input type="checkbox" value="tierra">
+          <div class="check-box">✓</div>
+          <span class="check-label">Verificación de puesta a tierra</span>
+        </label>
+        <label class="check-item" data-key="iluminacion">
+          <input type="checkbox" value="iluminacion">
+          <div class="check-box">✓</div>
+          <span class="check-label">Chequeo de iluminación y puntos de luz</span>
+        </label>
+        <label class="check-item" data-key="fugas">
+          <input type="checkbox" value="fugas">
+          <div class="check-box">✓</div>
+          <span class="check-label">Detección de fugas o cortocircuitos</span>
+        </label>
+      </div>
+      <div class="form-field" style="margin-top:14px;">
+        <label>Otros trabajos</label>
+        <input type="text" id="f-otros" placeholder="Especificar...">
+      </div>
+    </div>
+
+    <!-- NOVEDADES (solo en modo novedad) -->
+    <div class="form-section" id="section-novedad" style="display:none;">
+      <div class="form-section-title"><span>⚠️</span> Descripción de Novedad</div>
+      <div class="form-field">
+        <label>Tipo de novedad</label>
+        <select id="f-tipo-novedad">
+          <option value="">Seleccionar...</option>
+          <option>Falla eléctrica</option>
+          <option>Cortocircuito</option>
+          <option>Equipo dañado</option>
+          <option>Alarma disparada</option>
+          <option>Otro incidente</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Descripción del evento</label>
+        <textarea id="f-desc-novedad" placeholder="Describir detalladamente lo ocurrido..." rows="4"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Acciones tomadas</label>
+        <textarea id="f-acciones" placeholder="Qué medidas se tomaron..." rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- OBSERVACIONES -->
+    <div class="form-section">
+      <div class="form-section-title"><span>📝</span> Observaciones y Recomendaciones</div>
+      <div class="form-field">
+        <textarea id="f-observaciones" rows="4" placeholder="Ej: Se recomienda revisión completa del tablero principal en 3 meses..."></textarea>
+      </div>
+    </div>
+
+    <!-- FIRMAS -->
+    <div class="form-section">
+      <div class="form-section-title"><span>✍️</span> Firmas</div>
+      <div class="form-field">
+        <label>Firma del Técnico</label>
+        <div class="sig-wrap">
+          <canvas id="sig-tecnico" height="120"></canvas>
+        </div>
+        <div class="sig-actions">
+          <button class="btn-sm" onclick="clearSig('sig-tecnico')">Borrar</button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Nombre y firma del Cliente</label>
+        <div class="form-field" style="margin-bottom:10px;">
+          <input type="text" id="f-nombre-cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="sig-wrap">
+          <canvas id="sig-cliente" height="120"></canvas>
+        </div>
+        <div class="sig-actions">
+          <button class="btn-sm" onclick="clearSig('sig-cliente')">Borrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn-save" id="btn-save-report">
+      💾 Guardar Reporte PDF
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 5: SUCCESS ═══ -->
+<div class="screen" id="screen-success">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">¡Reporte Guardado!</div>
+    <div class="success-msg" id="success-msg">
+      El PDF se ha guardado en el dispositivo.<br>Recuerda subir el archivo a Google Drive.
+    </div>
+    <div class="success-actions">
+      <button class="btn-primary" id="btn-new-after">+ Nuevo Reporte</button>
+      <button class="btn-outline" id="btn-dash-after" style="color:var(--navy);border-color:var(--gray-200);">Ir al Inicio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-logout">
+  <div class="modal">
+    <div class="modal-title">Cerrar sesión</div>
+    <div class="modal-msg">¿Quieres bloquear la aplicación? Deberás ingresar tu PIN para volver.</div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal('modal-logout')">Cancelar</button>
+      <button class="btn-primary" id="btn-confirm-logout" style="flex:1;">Bloquear</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text">Generando PDF...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE & STORAGE
+// ═══════════════════════════════════════
+const DB_KEY = 'terasur_user';
+const REPORTS_KEY = 'terasur_reports';
+
+let currentMode = 'mantencion'; // 'mantencion' | 'novedad'
+let currentScreen = 'setup';
+
+function getUser() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || null; } catch { return null; }
+}
+function saveUser(u) { localStorage.setItem(DB_KEY, JSON.stringify(u)); }
+function getReports() {
+  try { return JSON.parse(localStorage.getItem(REPORTS_KEY)) || []; } catch { return []; }
+}
+function saveReports(r) { localStorage.setItem(REPORTS_KEY, JSON.stringify(r)); }
+
+// ═══════════════════════════════════════
+//  LOGO — SVG fallback if logo.png not found
+// ═══════════════════════════════════════
+const LOGO_SVG = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 100'><text x='10' y='70' font-family='Arial Black,sans-serif' font-size='52' font-weight='900' fill='%23111'>Tera</text><text x='170' y='70' font-family='Arial Black,sans-serif' font-size='52' font-weight='900' fill='%23111'>Sur</text><circle cx='153' cy='55' r='20' fill='url(%23g1)'/><defs><linearGradient id='g1' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23a8d832'/><stop offset='1' stop-color='%2300b4d8'/></linearGradient></defs></svg>`;
+
+function setLogos() {
+  document.querySelectorAll('[id^="logo-"]').forEach(img => {
+    img.onerror = function() { this.src = LOGO_SVG; };
+  });
+}
+
+// ═══════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  currentScreen = id;
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setLogos();
+  const user = getUser();
+  if (!user) {
+    showScreen('setup');
+    initSetup();
+  } else {
+    showScreen('login');
+    initLogin(user);
+  }
+  initSignaturePads();
+  renderReports();
+  updateDashboard();
+  initFormFields();
+  bindEvents();
+});
+
+// ═══════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════
+let setupPin = '';
+
+function initSetup() {
+  setupPin = '';
+  updateSetupDots();
+  document.getElementById('setup-numpad').addEventListener('click', e => {
+    const btn = e.target.closest('.num-btn');
+    if (!btn) return;
+    const n = btn.dataset.n;
+    if (n === 'del') { setupPin = setupPin.slice(0, -1); }
+    else if (n === 'ok') { /* confirm */ }
+    else if (setupPin.length < 4) { setupPin += n; }
+    updateSetupDots();
+    checkSetupReady();
+  });
+  ['setup-name','setup-role','setup-company'].forEach(id => {
+    document.getElementById(id).addEventListener('input', checkSetupReady);
+  });
+  document.getElementById('btn-setup-save').addEventListener('click', doSetup);
+}
+
+function updateSetupDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('sd' + i);
+    d.classList.toggle('filled', i < setupPin.length);
+    d.textContent = i < setupPin.length ? '●' : '';
+  }
+}
+
+function checkSetupReady() {
+  const ok = setupPin.length === 4 &&
+    document.getElementById('setup-name').value.trim() &&
+    document.getElementById('setup-role').value.trim();
+  document.getElementById('btn-setup-save').disabled = !ok;
+}
+
+function doSetup() {
+  const user = {
+    name: document.getElementById('setup-name').value.trim(),
+    role: document.getElementById('setup-role').value.trim(),
+    company: document.getElementById('setup-company').value.trim(),
+    pin: setupPin,
+    created: Date.now()
+  };
+  saveUser(user);
+  showToast('✅ Cuenta configurada');
+  showScreen('login');
+  initLogin(user);
+}
+
+// ═══════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════
+let loginPin = '';
+let attempts = 0;
+
+function initLogin(user) {
+  document.getElementById('login-username').textContent = user.name;
+  loginPin = '';
+  attempts = 0;
+  updateLoginDots();
+  document.getElementById('login-numpad').addEventListener('click', handleLoginInput);
+}
+
+function handleLoginInput(e) {
+  const btn = e.target.closest('.num-btn');
+  if (!btn) return;
+  const n = btn.dataset.n;
+  if (n === 'del') { loginPin = loginPin.slice(0, -1); }
+  else if (n === 'clr') { loginPin = ''; }
+  else if (loginPin.length < 4) {
+    loginPin += n;
+    if (loginPin.length === 4) { checkPin(); return; }
+  }
+  updateLoginDots();
+}
+
+function updateLoginDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('ld' + i);
+    d.classList.toggle('filled', i < loginPin.length);
+    d.textContent = i < loginPin.length ? '●' : '';
+    d.classList.remove('error');
+  }
+}
+
+function checkPin() {
+  const user = getUser();
+  if (loginPin === user.pin) {
+    attempts = 0;
+    document.getElementById('attempts-msg').textContent = '';
+    showScreen('dashboard');
+    updateDashboard();
+  } else {
+    attempts++;
+    for (let i = 0; i < 4; i++) document.getElementById('ld' + i).classList.add('error');
+    const rem = 5 - attempts;
+    document.getElementById('attempts-msg').textContent =
+      rem > 0 ? `PIN incorrecto. ${rem} intentos restantes.` : '¡Demasiados intentos!';
+    setTimeout(() => { loginPin = ''; updateLoginDots(); }, 600);
+  }
+}
+
+// ═══════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════
+function updateDashboard() {
+  const user = getUser();
+  if (!user) return;
+  const first = user.name.split(' ')[0];
+  document.getElementById('dash-username').textContent = user.name;
+  document.getElementById('dash-firstname').textContent = first;
+  const now = new Date();
+  document.getElementById('dash-date').textContent = now.toLocaleDateString('es-CL', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  renderReports();
+}
+
+function renderReports() {
+  const list = document.getElementById('reports-list');
+  const reports = getReports();
+  if (!reports.length) {
+    list.innerHTML = '<div class="empty-state">No hay reportes aún.<br>¡Crea el primero! ⚡</div>';
+    return;
+  }
+  list.innerHTML = reports.slice().reverse().slice(0, 10).map(r => `
+    <div class="report-item">
+      <div class="report-icon">${r.mode === 'novedad' ? '⚠️' : '⚡'}</div>
+      <div class="report-info">
+        <div class="report-name">${r.empresa || 'Sin empresa'} – ${r.unidad || 'Sin sala'}</div>
+        <div class="report-meta">${r.fecha || ''} · ${r.mode === 'novedad' ? 'Novedad' : 'Mantención'}</div>
+      </div>
+      <div class="report-chevron">›</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  FORM
+// ═══════════════════════════════════════
+function initFormFields() {
+  // Set today's date and time
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().slice(0,5);
+  document.getElementById('f-fecha').value = dateStr;
+  document.getElementById('f-hora').value = timeStr;
+
+  // Checkboxes
+  document.querySelectorAll('.check-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const cb = item.querySelector('input[type=checkbox]');
+      cb.checked = !cb.checked;
+      item.classList.toggle('checked', cb.checked);
+    });
+  });
+}
+
+function openForm(mode) {
+  currentMode = mode;
+  const title = mode === 'novedad' ? 'Reporte de Novedad' : 'Reporte de Mantención';
+  document.getElementById('form-screen-title').textContent = title;
+
+  // Reset
+  ['f-empresa','f-telefono','f-email','f-unidad','f-otros','f-observaciones','f-nombre-cliente'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.querySelectorAll('.check-item').forEach(item => {
+    item.classList.remove('checked');
+    item.querySelector('input').checked = false;
+  });
+  clearSig('sig-tecnico');
+  clearSig('sig-cliente');
+
+  // Reset date/time
+  const now = new Date();
+  document.getElementById('f-fecha').value = now.toISOString().split('T')[0];
+  document.getElementById('f-hora').value = now.toTimeString().slice(0,5);
+
+  // Pre-fill empresa from user profile
+  const user = getUser();
+  if (user && user.company) document.getElementById('f-empresa').value = user.company;
+
+  // Show/hide sections
+  document.getElementById('section-trabajos').style.display = mode === 'novedad' ? 'none' : '';
+  document.getElementById('section-novedad').style.display = mode === 'novedad' ? '' : 'none';
+
+  showScreen('form');
+}
+
+// ═══════════════════════════════════════
+//  SIGNATURE PADS
+// ═══════════════════════════════════════
+const sigs = {};
+
+function initSignaturePads() {
+  ['sig-tecnico', 'sig-cliente'].forEach(id => {
+    const canvas = document.getElementById(id);
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let lastX, lastY;
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = 120;
+      ctx.strokeStyle = '#1a2744';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches) {
+        return [e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top];
+      }
+      return [e.clientX - rect.left, e.clientY - rect.top];
+    }
+
+    canvas.addEventListener('mousedown', e => { drawing = true; [lastX, lastY] = getPos(e); });
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing) return;
+      const [x, y] = getPos(e);
+      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+      [lastX, lastY] = [x, y];
+    });
+    canvas.addEventListener('mouseup', () => { drawing = false; });
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; [lastX, lastY] = getPos(e); }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault(); if (!drawing) return;
+      const [x, y] = getPos(e);
+      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+      [lastX, lastY] = [x, y];
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { drawing = false; });
+
+    sigs[id] = canvas;
+  });
+}
+
+function clearSig(id) {
+  const canvas = document.getElementById(id);
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ═══════════════════════════════════════
+//  PDF GENERATION
+// ═══════════════════════════════════════
+async function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  const margin = 15;
+  let y = 0;
+
+  // Colors
+  const navy = [26, 39, 68];
+  const teal = [0, 180, 216];
+  const green = [168, 216, 50];
+  const gray = [100, 120, 150];
+  const lightGray = [240, 244, 248];
+
+  // HEADER BG
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, W, 40, 'F');
+
+  // Gradient stripe
+  doc.setFillColor(...teal);
+  doc.rect(0, 38, W, 3, 'F');
+  doc.setFillColor(...green);
+  doc.rect(0, 39.5, W, 1.5, 'F');
+
+  // Logo text (since we can't embed external img in PDF easily, use text logo)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(24);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TERA SUR', margin, 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 180, 216);
+  doc.text('Soluciones Eléctricas y Tecnológicas', margin, 25);
+
+  // Report title (right side)
+  const mode = currentMode;
+  const reportTitle = mode === 'novedad' ? 'REPORTE DE NOVEDAD' : 'REPORTE DE MANTENCIÓN ELÉCTRICA';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(168, 216, 50);
+  doc.text(reportTitle, W - margin, 16, { align: 'right' });
+
+  // Date/time on header
+  const fecha = document.getElementById('f-fecha').value;
+  const hora = document.getElementById('f-hora').value;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(200, 220, 240);
+  doc.text(`Fecha: ${fecha}  Hora: ${hora}`, W - margin, 24, { align: 'right' });
+
+  const user = getUser();
+  doc.text(`Técnico: ${user.name} · ${user.role}`, W - margin, 31, { align: 'right' });
+
+  y = 48;
+
+  function sectionHeader(title, icon) {
+    doc.setFillColor(...lightGray);
+    doc.roundedRect(margin, y, W - margin*2, 8, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...navy);
+    doc.text(`${icon}  ${title}`, margin + 3, y + 5.5);
+    y += 11;
+  }
+
+  function field(label, value, x, w, inline) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...gray);
+    doc.text(label.toUpperCase(), x, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...navy);
+    const val = value || '—';
+    doc.text(val, x, y + 5);
+    // underline
+    doc.setDrawColor(...lightGray);
+    doc.setLineWidth(0.3);
+    doc.line(x, y + 6.5, x + w, y + 6.5);
+    if (!inline) y += 14;
+  }
+
+  function fieldBox(label, value) {
+    const bw = W - margin*2;
+    doc.setDrawColor(...lightGray);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, bw, 18, 1, 1, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...gray);
+    doc.text(label.toUpperCase(), margin + 3, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...navy);
+    doc.text(value || '—', margin + 3, y + 13);
+    y += 21;
+  }
+
+  // ── DATOS DEL CLIENTE ──
+  sectionHeader('DATOS DEL CLIENTE', '🏢');
+  fieldBox('Empresa', document.getElementById('f-empresa').value);
+
+  const tw = (W - margin*2 - 5) / 2;
+  field('Teléfono', document.getElementById('f-telefono').value, margin, tw, true);
+  field('Email', document.getElementById('f-email').value, margin + tw + 5, tw, true);
+  y += 14;
+
+  // ── DATOS DEL SERVICIO ──
+  sectionHeader('DATOS DEL SERVICIO', '📍');
+  fieldBox('Unidad / Sala', document.getElementById('f-unidad').value);
+
+  const fw = (W - margin*2 - 5) / 2;
+  field('Fecha', fecha, margin, fw, true);
+  field('Hora', hora, margin + fw + 5, fw, true);
+  y += 14;
+
+  // ── TRABAJOS / NOVEDAD ──
+  if (mode === 'mantencion') {
+    sectionHeader('DESCRIPCIÓN DEL TRABAJO REALIZADO', '🔧');
+    const checks = [
+      ['tableros','Revisión de tableros eléctricos'],
+      ['enchufes','Reemplazo de enchufes o interruptores'],
+      ['tierra','Verificación de puesta a tierra'],
+      ['iluminacion','Chequeo de iluminación y puntos de luz'],
+      ['fugas','Detección de fugas o cortocircuitos'],
+    ];
+    checks.forEach(([key, label]) => {
+      const item = document.querySelector(`.check-item[data-key="${key}"]`);
+      const checked = item && item.classList.contains('checked');
+      doc.setFillColor(checked ? ...teal : 230, checked ? 230 : 230, checked ? 230 : 230);
+      if (checked) doc.setFillColor(...teal);
+      else doc.setFillColor(235, 240, 245);
+      doc.roundedRect(margin, y, 5, 5, 0.5, 0.5, 'F');
+      if (checked) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255,255,255);
+        doc.text('✓', margin + 0.8, y + 3.8);
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...navy);
+      doc.text(label, margin + 8, y + 3.8);
+      y += 8;
+    });
+
+    const otros = document.getElementById('f-otros').value;
+    if (otros) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...gray);
+      doc.text('OTROS:', margin, y + 4);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...navy);
+      doc.text(otros, margin + 15, y + 4);
+      y += 10;
+    }
+    y += 4;
+  } else {
+    sectionHeader('DESCRIPCIÓN DE NOVEDAD', '⚠️');
+    fieldBox('Tipo de novedad', document.getElementById('f-tipo-novedad').value);
+
+    const descNov = document.getElementById('f-desc-novedad').value;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...gray);
+    doc.text('DESCRIPCIÓN DEL EVENTO', margin, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...navy);
+    const descLines = doc.splitTextToSize(descNov || '—', W - margin*2);
+    doc.text(descLines, margin, y);
+    y += descLines.length * 5 + 6;
+
+    const acciones = document.getElementById('f-acciones').value;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...gray);
+    doc.text('ACCIONES TOMADAS', margin, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...navy);
+    const acLines = doc.splitTextToSize(acciones || '—', W - margin*2);
+    doc.text(acLines, margin, y);
+    y += acLines.length * 5 + 6;
+  }
+
+  // ── OBSERVACIONES ──
+  sectionHeader('OBSERVACIONES Y RECOMENDACIONES', '📝');
+  const obs = document.getElementById('f-observaciones').value || '—';
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...navy);
+  doc.setDrawColor(...lightGray);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, W - margin*2, 28, 1, 1, 'S');
+  const obsLines = doc.splitTextToSize(obs, W - margin*2 - 6);
+  doc.text(obsLines, margin + 3, y + 7);
+  y += 32;
+
+  // ── FIRMAS ──
+  sectionHeader('FIRMAS', '✍️');
+  const sigW = (W - margin*2 - 10) / 2;
+
+  // Técnico sig box
+  doc.setDrawColor(...lightGray);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(margin, y, sigW, 30, 1, 1, 'S');
+  const sigTec = sigs['sig-tecnico'];
+  if (sigTec) {
+    try {
+      const sigImg = sigTec.toDataURL('image/png');
+      doc.addImage(sigImg, 'PNG', margin + 1, y + 1, sigW - 2, 22);
+    } catch(e) {}
+  }
+  doc.setDrawColor(...teal);
+  doc.setLineWidth(0.5);
+  doc.line(margin + 4, y + 25, margin + sigW - 4, y + 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...gray);
+  doc.text('TÉCNICO: ' + (user.name || ''), margin + sigW/2, y + 29, { align: 'center' });
+
+  // Cliente sig box
+  const cX = margin + sigW + 10;
+  doc.setDrawColor(...lightGray);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(cX, y, sigW, 30, 1, 1, 'S');
+  const sigCli = sigs['sig-cliente'];
+  if (sigCli) {
+    try {
+      const sigImg2 = sigCli.toDataURL('image/png');
+      doc.addImage(sigImg2, 'PNG', cX + 1, y + 1, sigW - 2, 22);
+    } catch(e) {}
+  }
+  doc.setDrawColor(...teal);
+  doc.setLineWidth(0.5);
+  doc.line(cX + 4, y + 25, cX + sigW - 4, y + 25);
+  const clientName = document.getElementById('f-nombre-cliente').value || 'Cliente';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...gray);
+  doc.text('CLIENTE: ' + clientName, cX + sigW/2, y + 29, { align: 'center' });
+
+  y += 34;
+
+  // ── FOOTER ──
+  doc.setFillColor(...navy);
+  doc.rect(0, H - 14, W, 14, 'F');
+  doc.setFillColor(...teal);
+  doc.rect(0, H - 14, W, 1, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(150, 180, 210);
+  doc.text('Tera Sur – Soluciones Eléctricas y Tecnológicas', margin, H - 6);
+  doc.text(`Generado: ${new Date().toLocaleString('es-CL')}`, W - margin, H - 6, { align: 'right' });
+
+  return doc;
+}
+
+async function saveReport() {
+  document.getElementById('loader').classList.add('open');
+  await new Promise(r => setTimeout(r, 100));
+
+  try {
+    const empresa = document.getElementById('f-empresa').value || 'SinEmpresa';
+    const fecha = document.getElementById('f-fecha').value;
+    const mode = currentMode;
+    const filename = `TeraSur_${mode === 'novedad' ? 'Novedad' : 'Mantencion'}_${empresa.replace(/\s/g,'_')}_${fecha}.pdf`;
+
+    const pdf = await generatePDF();
+    pdf.save(filename);
+
+    // Save to history
+    const reports = getReports();
+    reports.push({
+      id: Date.now(),
+      mode: currentMode,
+      empresa: document.getElementById('f-empresa').value,
+      unidad: document.getElementById('f-unidad').value,
+      fecha: fecha,
+      filename: filename,
+      ts: Date.now()
+    });
+    saveReports(reports);
+
+    document.getElementById('loader').classList.remove('open');
+    document.getElementById('success-msg').innerHTML =
+      `✅ PDF <strong>"${filename}"</strong> guardado en descargas.<br><br>` +
+      `Para subir a Google Drive:<br>Abre Google Drive → "+ Nuevo" → Subir archivo.`;
+    showScreen('success');
+  } catch (err) {
+    document.getElementById('loader').classList.remove('open');
+    showToast('❌ Error al generar PDF: ' + err.message);
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════
+//  BIND EVENTS
+// ═══════════════════════════════════════
+function bindEvents() {
+  document.getElementById('btn-new-report').addEventListener('click', () => openForm('mantencion'));
+  document.getElementById('btn-new-novedad').addEventListener('click', () => openForm('novedad'));
+  document.getElementById('btn-back').addEventListener('click', () => showScreen('dashboard'));
+  document.getElementById('btn-save-report').addEventListener('click', saveReport);
+  document.getElementById('btn-logout').addEventListener('click', () => openModal('modal-logout'));
+  document.getElementById('btn-confirm-logout').addEventListener('click', () => {
+    closeModal('modal-logout');
+    loginPin = '';
+    updateLoginDots();
+    document.getElementById('attempts-msg').textContent = '';
+    showScreen('login');
+  });
+  document.getElementById('btn-new-after').addEventListener('click', () => openForm(currentMode));
+  document.getElementById('btn-dash-after').addEventListener('click', () => {
+    renderReports(); showScreen('dashboard');
+  });
+
+  // Close modal on overlay click
+  document.getElementById('modal-logout').addEventListener('click', function(e) {
+    if (e.target === this) closeModal('modal-logout');
+  });
+}
+// ═══════════════════════════════════════
+//  SERVICE WORKER
+// ═══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
