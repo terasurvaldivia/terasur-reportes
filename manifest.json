@@ -1,0 +1,23 @@
+{
+  "name": "Tera Sur – Reportes",
+  "short_name": "TeraSur",
+  "description": "App de reportes Tera Sur",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a2744",
+  "theme_color": "#1a2744",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "business",
+    "utilities"
+  ],
+  "lang": "es-CL"
+}
